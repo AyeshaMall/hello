@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AyeshaMall Online Code Editor</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.min.js">
+    </script>
+    <link rel="stylesheet" href="style.css">
+
+  
+</head>
+
+<body>
+    <div id="app-container">
+        <div id="topbar">
+            <div class="brand">
+                <img src="https://ayesha-mall.netlify.app/image/logo.png" alt="Logo"
+                onerror="this.style.display='none';this.nextSibling.textContent='AM';">
+                <span>AyeshaMall Editor</span>
+            </div>
+            <div class="topbar-actions">
+                <button onclick="AyeshaApp.newProject()" title="New Project"><span class="material-icons">add</span><span class="label">New</span></button>
+                <button onclick="AyeshaApp.openRecent()" title="Open Recent"><span class="material-icons">history</span><span class="label">Open</span></button>
+                <button onclick="AyeshaApp.saveProject()" title="Save (Ctrl+S)"><span class="material-icons">save</span><span class="label">Save</span></button>
+                <button onclick="AyeshaApp.exportProject()" title="Export"><span class="material-icons">file_download</span><span class="label">Export</span></button>
+                <button onclick="AyeshaApp.importProject()" title="Import"><span class="material-icons">file_upload</span><span class="label">Import</span></button>
+                <button onclick="AyeshaApp.uploadMedia()" title="Upload Media"><span class="material-icons">add_photo_alternate</span><span class="label">Media</span></button>
+                <button onclick="AyeshaApp.toggleTheme()" title="Toggle Theme"><span class="material-icons">palette</span><span class="label">Theme</span></button>
+                <button onclick="AyeshaApp.runPreview()" title="Run Preview"><span class="material-icons">play_arrow</span><span class="label">Run</span></button>
+                <button onclick="AyeshaApp.showAuthModal()" title="Sign In"><span class="material-icons">person</span><span class="label">Sign In</span></button>
+                <button onclick="window.location.href='decode-asha.html'" title="asha"><span class="material-icons">person</span><span class="label">Handle Asha formation</span></button>
+            </div>
+            <div id="clipboard-indicator"><span class="material-icons" style="font-size:14px;">content_copy</span><span id="clipboard-text"></span></div>
+        </div>
+
+        <div id="main-area">
+            <div id="activity-bar">
+                <div class="activity-icon active" data-panel="explorer" title="Explorer" onclick="AyeshaApp.switchPanel('explorer')"><span class="material-icons">folder</span></div>
+                <div class="activity-icon" data-panel="search" title="Search" onclick="AyeshaApp.switchPanel('search')"><span class="material-icons">search</span></div>
+                <div class="activity-icon" data-panel="images" title="Images" onclick="AyeshaApp.switchPanel('images')"><span class="material-icons">image</span></div>
+                <div class="activity-icon" data-panel="settings" title="Settings" onclick="AyeshaApp.switchPanel('settings')"><span class="material-icons">settings</span></div>
+                <div class="activity-icon" data-panel="git" title="Git (Coming Soon)" onclick="AyeshaApp.switchPanel('git')"><span class="material-icons">code</span></div>
+                <div style="flex:1;"></div>
+            </div>
+
+            <div id="left-panel">
+                <div id="panel-explorer" class="panel-content flex-col" style="flex:1;">
+                    <div class="panel-header">
+                        EXPLORER
+                        <div class="panel-actions">
+                            <button onclick="AyeshaApp.createFile()" title="New File"><span class="material-icons" style="font-size:16px;">note_add</span></button>
+                            <button onclick="AyeshaApp.createFolder()" title="New Folder"><span class="material-icons" style="font-size:16px;">create_new_folder</span></button>
+                            <button onclick="AyeshaApp.refreshFileTree()" title="Refresh"><span class="material-icons" style="font-size:16px;">refresh</span></button>
+                            <button onclick="AyeshaApp.collapseAll()" title="Collapse All"><span class="material-icons" style="font-size:16px;">unfold_less</span></button>
+                        </div>
+                    </div>
+                    <div style="padding:4px 8px;border-bottom:1px solid var(--border-color);display:flex;gap:4px;" id="explorer-action-bar">
+                        <button class="toolbar-btn" onclick="AyeshaApp.cutFiles()" title="Cut" style="font-size:11px;padding:3px 6px;"><span class="material-icons" style="font-size:14px;">content_cut</span></button>
+                        <button class="toolbar-btn" onclick="AyeshaApp.copyFiles()" title="Copy" style="font-size:11px;padding:3px 6px;"><span class="material-icons" style="font-size:14px;">content_copy</span></button>
+                        <button class="toolbar-btn" onclick="AyeshaApp.pasteFiles()" title="Paste" style="font-size:11px;padding:3px 6px;"><span class="material-icons" style="font-size:14px;">content_paste</span></button>
+                        <button class="toolbar-btn" onclick="AyeshaApp.duplicateFile()" title="Duplicate" style="font-size:11px;padding:3px 6px;"><span class="material-icons" style="font-size:14px;">file_copy</span></button>
+                        <button class="toolbar-btn" onclick="AyeshaApp.moveFile()" title="Move" style="font-size:11px;padding:3px 6px;"><span class="material-icons" style="font-size:14px;">drive_file_move</span></button>
+                    </div>
+                    <div id="file-tree" style="flex:1;overflow-y:auto;"></div>
+                </div>
+                <div id="panel-search" class="panel-content hidden">
+                    <div class="panel-header">SEARCH</div>
+                    <input type="text" class="search-input" placeholder="Search files..." oninput="AyeshaApp.searchFiles(this.value)" id="search-input">
+                    <div class="search-results" id="search-results"></div>
+                </div>
+                <div id="panel-images" class="panel-content hidden">
+                    <div class="panel-header">IMAGES & MEDIA</div>
+                    <div class="image-grid" id="image-grid"></div>
+                </div>
+                <div id="panel-settings" class="panel-content hidden">
+                    <div class="panel-header">SETTINGS</div>
+                    <div id="settings-panel">
+                        <div class="setting-row"><span>Theme</span><select id="setting-theme" onchange="AyeshaApp.setTheme(this.value)">
+                                <option value="dark">Dark</option>
+                                <option value="light">Light</option>
+                                <option value="high-contrast">High Contrast</option>
+                            </select></div>
+                        <div class="setting-row"><span>Font Size</span><input type="range" id="setting-fontsize" min="10" max="24" value="14" oninput="AyeshaApp.setFontSize(this.value)"><span id="fontsize-val">14px</span></div>
+                        <div class="setting-row"><span>Tab Size</span><select id="setting-tabsize" onchange="AyeshaApp.setTabSize(this.value)">
+                                <option value="2">2</option>
+                                <option value="4" selected>4</option>
+                                <option value="8">8</option>
+                            </select></div>
+                        <div class="setting-row"><span>Word Wrap</span><select id="setting-wordwrap" onchange="AyeshaApp.setWordWrap(this.value)">
+                                <option value="on">On</option>
+                                <option value="off">Off</option>
+                            </select></div>
+                        <div class="setting-row"><span>Minimap</span><select id="setting-minimap" onchange="AyeshaApp.setMinimap(this.value)">
+                                <option value="on">On</option>
+                                <option value="off">Off</option>
+                            </select></div>
+                        <div class="setting-row"><span>Line Numbers</span><select id="setting-linenumbers" onchange="AyeshaApp.setLineNumbers(this.value)">
+                                <option value="on">On</option>
+                                <option value="off">Off</option>
+                            </select></div>
+                    </div>
+                </div>
+                <div id="panel-git" class="panel-content hidden">
+                    <div class="panel-header">GIT</div>
+                    <div style="padding:20px;text-align:center;color:var(--text-muted);">🚀 Git integration coming soon!</div>
+                </div>
+            </div>
+
+            <div id="resize-handle"></div>
+
+            <div id="editor-area">
+                <div id="tab-bar"></div>
+                <div id="monaco-container">
+                    <div id="welcome-screen">
+                        <img src="https://ayesha-mall.netlify.app/image/logo.png" alt="Logo" onerror="this.style.display='none';">
+                        <h2>AyeshaMall Code Editor</h2>
+                        <div class="quick-actions">
+                            <button onclick="AyeshaApp.createFile()"><span class="material-icons">note_add</span> New File</button>
+                            <button onclick="AyeshaApp.openRecent()"><span class="material-icons">history</span> Open Recent</button>
+                            <button onclick="AyeshaApp.importProject()"><span class="material-icons">file_upload</span> Import Project</button>
+                        </div>
+                        <div id="recent-files-list" style="max-height:200px;overflow-y:auto;font-size:12px;color:var(--text-secondary);"></div>
+                    </div>
+                    <div id="loader"></div>
+                    <div id="preview-container">
+                        <div id="preview-header">
+                            <span style="font-size:12px;color:var(--text-primary);">Live Preview</span>
+                            <button class="toolbar-btn" onclick="AyeshaApp.closePreview()" style="color:var(--text-primary);"><span class="material-icons">close</span></button>
+                        </div>
+                        <iframe id="preview-iframe" sandbox="allow-scripts allow-forms allow-modals allow-same-origin"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <div id="right-panel">
+                <div class="panel-header">PROPERTIES</div>
+                <div id="properties-content">
+                    <div class="prop-row"><span class="prop-label">Type</span><span class="prop-value" id="prop-type">-</span></div>
+                    <div class="prop-row"><span class="prop-label">Path</span><span class="prop-value" id="prop-path">-</span></div>
+                    <div class="prop-row"><span class="prop-label">Size</span><span class="prop-value" id="prop-size">-</span></div>
+                    <div class="prop-row"><span class="prop-label">Dimensions</span><span class="prop-value" id="prop-dimensions">-</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bottom-resize-handle"></div>
+        <div id="bottom-panel">
+            <div class="panel-header">
+                CONSOLE
+                <button class="toolbar-btn" onclick="AyeshaApp.clearConsole()" style="font-size:11px;"><span class="material-icons" style="font-size:14px;">delete_sweep</span> Clear</button>
+            </div>
+            <div id="console-output"></div>
+        </div>
+
+        <div id="statusbar">
+            <span class="status-item" id="status-language">HTML</span>
+            <span class="status-item" id="status-position">Ln 1, Col 1</span>
+            <span style="flex:1;"></span>
+            <span class="status-item" id="status-theme">Dark</span>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <input type="file" id="media-file-input" multiple accept="image/*,video/*,audio/*" style="display:none;" onchange="AyeshaApp.handleMediaUpload(event)">
+    <input type="file" id="import-file-input" accept=".asha,.zip,.json" style="display:none;" onchange="AyeshaApp.handleImportFile(event)">
+
+   <script src="script.js"></script>
+</body>
+
+</html>
