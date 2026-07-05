@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asha Converter · .asha ↔ zip/folder</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1e1e2e;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #cdd6f4;
+        }
+        .card {
+            background: #252536;
+            border-radius: 24px;
+            padding: 32px 28px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 1px solid #45456a;
+        }
+        h1 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 24px;
+            letter-spacing: -0.3px;
+            color: #89b4fa;
+            margin-bottom: 8px;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #a6adc8;
+            margin-left: 8px;
+        }
+        .sub {
+            color: #a6adc8;
+            margin-bottom: 24px;
+            border-left: 3px solid #89b4fa;
+            padding-left: 14px;
+            font-size: 14px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0 18px;
+        }
+        .btn {
+            background: #313148;
+            border: 1px solid #45456a;
+            color: #cdd6f4;
+            padding: 14px 10px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            box-shadow: 0 2px 0 #1e1e2e;
+        }
+        .btn:hover {
+            background: #3a3a55;
+            border-color: #89b4fa;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn.primary {
+            background: #89b4fa;
+            border-color: #89b4fa;
+            color: #1e1e2e;
+            font-weight: 600;
+        }
+        .btn.primary:hover {
+            background: #b4d0fb;
+            border-color: #b4d0fb;
+        }
+        .btn.danger {
+            border-color: #f38ba8;
+            color: #f38ba8;
+        }
+        .btn.danger:hover {
+            background: #f38ba820;
+        }
+        .file-input-wrap {
+            margin: 8px 0 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #1e1e2e;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px dashed #45456a;
+        }
+        .file-input-wrap label {
+            background: #313148;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #45456a;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .file-input-wrap label:hover {
+            background: #3a3a55;
+            border-color: #89b4fa;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .info-box {
+            background: #1e1e2e;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-top: 18px;
+            border-left: 4px solid #89b4fa;
+            font-size: 13px;
+            color: #a6adc8;
+            word-break: break-all;
+        }
+        .info-box strong {
+            color: #cdd6f4;
+        }
+        .badge {
+            background: #45456a;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            color: #cdd6f4;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 18px 0 8px;
+        }
+        .flex {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .status {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: #1e1e2e;
+            font-size: 13px;
+            border: 1px solid #2a2a3d;
+            color: #a6adc8;
+        }
+        .status.success { border-color: #a6e3a1; color: #a6e3a1; }
+        .status.error { border-color: #f38ba8; color: #f38ba8; }
+        .status.info { border-color: #89dceb; color: #89dceb; }
+        .mt-2 { margin-top: 10px; }
+        .icon { font-size: 20px; vertical-align: middle; }
+        .sep { color: #45456a; padding: 0 4px; }
+        @media (max-width: 550px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>
+        <span class="material-icons" style="font-size:28px;">swap_horiz</span> Asha Converter
+        <small>.asha ↔ zip / folder</small>
+    </h1>
+    <div class="sub">Convert .asha projects to .zip, folders, or extract .asha from zip/folder</div>
+
+    <!-- action grid -->
+    <div class="grid">
+        <button class="btn" id="btnZipToAsha"><span class="material-icons">unarchive</span> Zip → .asha</button>
+        <button class="btn" id="btnFolderToAsha"><span class="material-icons">folder_open</span> Folder → .asha</button>
+        <button class="btn primary" id="btnAshaToZip"><span class="material-icons">archive</span> .asha → Zip</button>
+        <button class="btn primary" id="btnAshaToFolder"><span class="material-icons">create_new_folder</span> .asha → Folder</button>
+    </div>
+
+    <!-- file input + info -->
+    <div class="file-input-wrap">
+        <label for="fileInput"><span class="material-icons">attach_file</span> Choose file / folder</label>
+        <input type="file" id="fileInput" accept=".asha,.zip,.json">
+        <span id="fileName" style="color:#a6adc8; font-size:13px;">No file selected</span>
+        <span class="badge" id="fileTypeBadge">—</span>
+    </div>
+
+    <div class="actions">
+        <button class="btn" id="btnDownloadAsha" style="flex:1;"><span class="material-icons">download</span> Download .asha</button>
+        <button class="btn" id="btnDownloadZip" style="flex:1;"><span class="material-icons">download</span> Download .zip</button>
+    </div>
+
+    <!-- status / log -->
+    <div id="statusBox" class="status info">💡 Ready — select a file or use the buttons above.</div>
+
+    <div class="info-box">
+        <strong>📦 Supported conversions:</strong><br>
+        • <strong>.asha</strong> ↔ <strong>.zip</strong> (full project with media)<br>
+        • <strong>.asha</strong> ↔ <strong>folder</strong> (extract to folder / pack folder)<br>
+        • <strong>any .asha</strong> → <strong>.zip</strong> or <strong>folder</strong><br>
+        • <strong>any .zip / folder</strong> → <strong>.asha</strong> (auto-detects project structure)
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- DOM refs ----------
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const fileTypeBadge = document.getElementById('fileTypeBadge');
+        const statusBox = document.getElementById('statusBox');
+
+        const btnZipToAsha = document.getElementById('btnZipToAsha');
+        const btnFolderToAsha = document.getElementById('btnFolderToAsha');
+        const btnAshaToZip = document.getElementById('btnAshaToZip');
+        const btnAshaToFolder = document.getElementById('btnAshaToFolder');
+        const btnDownloadAsha = document.getElementById('btnDownloadAsha');
+        const btnDownloadZip = document.getElementById('btnDownloadZip');
+
+        // internal state
+        let currentFileData = null;        // { name, type, content (Blob/string), data, isAsha, isZip, isFolder }
+        let currentAshaBlob = null;        // for download .asha
+        let currentZipBlob = null;         // for download .zip
+        let currentFolderFiles = null;     // for folder mode (array of {path, content/blob})
+
+        // ---------- helpers ----------
+        function setStatus(msg, type='info') {
+            statusBox.textContent = msg;
+            statusBox.className = 'status ' + type;
+        }
+
+        function updateFileInfo(file) {
+            if (!file) {
+                fileName.textContent = 'No file selected';
+                fileTypeBadge.textContent = '—';
+                return;
+            }
+            fileName.textContent = file.name + ' (' + (file.size ? (file.size/1024).toFixed(1)+' KB' : 'unknown') + ')';
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'asha') fileTypeBadge.textContent = '📁 .asha';
+            else if (ext === 'zip') fileTypeBadge.textContent = '📦 .zip';
+            else if (ext === 'json') fileTypeBadge.textContent = '📄 .json';
+            else fileTypeBadge.textContent = '📎 ' + ext;
+        }
+
+        // ---------- core converters ----------
+
+        // 1. Zip -> .asha   (extract zip, build .asha JSON)
+        async function zipToAsha(zipBlob) {
+            try {
+                const zip = await JSZip.loadAsync(zipBlob);
+                const fileTree = { name: 'root', type: 'folder', children: {} };
+                const mediaBlobs = {}; // path -> blob
+
+                const entries = Object.keys(zip.files);
+                for (const path of entries) {
+                    const entry = zip.files[path];
+                    if (entry.dir) continue;
+                    const parts = path.split('/').filter(Boolean);
+                    const fileName = parts.pop();
+                    let current = fileTree;
+                    for (const part of parts) {
+                        if (!current.children) current.children = {};
+                        if (!current.children[part]) {
+                            current.children[part] = { name: part, type: 'folder', children: {} };
+                        }
+                        current = current.children[part];
+                    }
+                    if (!current.children) current.children = {};
+                    const blob = await entry.async('blob');
+                    const isMedia = blob.type.startsWith('image/') || blob.type.startsWith('video/') || blob.type.startsWith('audio/');
+                    const node = {
+                        name: fileName,
+                        type: 'file',
+                        content: isMedia ? '' : await blob.text(),
+                        children: {},
+                        blobUrl: null,
+                        blobData: isMedia ? blob : null,
+                        mediaType: isMedia ? blob.type : '',
+                    };
+                    current.children[fileName] = node;
+                    if (isMedia) {
+                        mediaBlobs[path] = blob;
+                    }
+                }
+
+                // build .asha JSON (without blobs, but store media refs)
+                const ashaData = {
+                    version: '1.0',
+                    metadata: {
+                        projectName: 'imported',
+                        exportDate: new Date().toISOString(),
+                        app: 'Asha Converter'
+                    },
+                    fileTree: serializeTree(fileTree),
+                    openTabs: [],
+                    activeTabPath: null,
+                };
+
+                // attach media blobs to the asha data (we'll embed them in a separate structure)
+                // but we keep them separate for packing into zip later.
+                return { ashaData, mediaBlobs, fileTree };
+            } catch (e) {
+                throw new Error('Zip parsing failed: ' + e.message);
+            }
+        }
+
+        function serializeTree(node) {
+            const s = { name: node.name, type: node.type };
+            if (node.type === 'file') {
+                if (node.blobData) {
+                    s.hasBlob = true;
+                    s.mediaType = node.mediaType || '';
+                } else {
+                    s.content = node.content || '';
+                }
+            } else if (node.type === 'folder' && node.children) {
+                s.children = {};
+                for (const [key, child] of Object.entries(node.children)) {
+                    s.children[key] = serializeTree(child);
+                }
+            }
+            return s;
+        }
+
+        // 2. Folder -> .asha  (using File System API)
+        async function folderToAsha(files) {
+            // files is an array of {path, file} from directory picker or drag-drop
+            const fileTree = { name: 'root', type: 'folder', children: {} };
+            const mediaBlobs = {};
+
+            for (const item of files) {
+                const path = item.path;
+                const file = item.file;
+                const parts = path.split('/').filter(Boolean);
+                const fileName = parts.pop();
+                let current = fileTree;
+                for (const part of parts) {
+                    if (!current.children) current.children = {};
+                    if (!current.children[part]) {
+                        current.children[part] = { name: part, type: 'folder', children: {} };
+                    }
+                    current = current.children[part];
+                }
+                if (!current.children) current.children = {};
+                const blob = await file.arrayBuffer().then(buf => new Blob([buf], { type: file.type || 'application/octet-stream' }));
+                const isMedia = file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/');
+                const node = {
+                    name: fileName,
+                    type: 'file',
+                    content: isMedia ? '' : await blob.text(),
+                    children: {},
+                    blobUrl: null,
+                    blobData: isMedia ? blob : null,
+                    mediaType: isMedia ? file.type : '',
+                };
+                current.children[fileName] = node;
+                if (isMedia) {
+                    mediaBlobs[path] = blob;
+                }
+            }
+
+            const ashaData = {
+                version: '1.0',
+                metadata: {
+                    projectName: 'folder-import',
+                    exportDate: new Date().toISOString(),
+                    app: 'Asha Converter'
+                },
+                fileTree: serializeTree(fileTree),
+                openTabs: [],
+                activeTabPath: null,
+            };
+            return { ashaData, mediaBlobs, fileTree };
+        }
+
+        // 3. .asha -> Zip
+        async function ashaToZip(ashaData, mediaBlobs) {
+            const zip = new JSZip();
+            // rebuild file tree from ashaData.fileTree
+            await addTreeToZip(ashaData.fileTree, '', zip, mediaBlobs);
+            return zip;
+        }
+
+        async function addTreeToZip(node, basePath, zip, mediaBlobs) {
+            if (node.type === 'file') {
+                let content = node.content || '';
+                if (node.hasBlob && mediaBlobs) {
+                    // find the blob by path
+                    const path = (basePath + node.name).replace(/^\/+/, '');
+                    const blob = mediaBlobs[path];
+                    if (blob) {
+                        zip.file(path, blob);
+                        return;
+                    }
+                }
+                zip.file(basePath + node.name, content);
+            } else if (node.type === 'folder' && node.children) {
+                const folderPath = basePath + (node.name === 'root' ? '' : node.name + '/');
+                for (const [key, child] of Object.entries(node.children)) {
+                    await addTreeToZip(child, folderPath, zip, mediaBlobs);
+                }
+            }
+        }
+
+        // 4. .asha -> Folder (using File System API)
+        async function ashaToFolder(ashaData, mediaBlobs) {
+            if (!window.showDirectoryPicker) {
+                throw new Error('File System API not supported in this browser');
+            }
+            const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            await writeTreeToFolder(ashaData.fileTree, dirHandle, mediaBlobs);
+            return dirHandle;
+        }
+
+        async function writeTreeToFolder(node, dirHandle, mediaBlobs, basePath='') {
+            if (node.type === 'file') {
+                const fileHandle = await dirHandle.getFileHandle(node.name, { create: true });
+                const writable = await fileHandle.createWritable();
+                if (node.hasBlob && mediaBlobs) {
+                    const path = (basePath + node.name).replace(/^\/+/, '');
+                    const blob = mediaBlobs[path];
+                    if (blob) {
+                        await writable.write(blob);
+                        await writable.close();
+                        return;
+                    }
+                }
+                await writable.write(node.content || '');
+                await writable.close();
+            } else if (node.type === 'folder' && node.children) {
+                if (node.name !== 'root') {
+                    dirHandle = await dirHandle.getDirectoryHandle(node.name, { create: true });
+                }
+                for (const [key, child] of Object.entries(node.children)) {
+                    const childPath = (basePath + (node.name === 'root' ? '' : node.name + '/') + key).replace(/^\/+/, '');
+                    await writeTreeToFolder(child, dirHandle, mediaBlobs, childPath);
+                }
+            }
+        }
+
+        // ---------- UI actions ----------
+
+        // load .asha from file
+        async function loadAshaFromFile(file) {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            if (!data.fileTree) throw new Error('Invalid .asha: missing fileTree');
+            // we need to extract media blobs if present (they are not in JSON)
+            // we'll just keep the data and later try to load from zip if needed
+            return data;
+        }
+
+        // load zip and extract asha data
+        async function loadZipAsAsha(zipFile) {
+            const result = await zipToAsha(zipFile);
+            return result;
+        }
+
+        // main file handler
+        async function handleFile(file) {
+            if (!file) return;
+            updateFileInfo(file);
+            const ext = file.name.split('.').pop().toLowerCase();
+            try {
+                if (ext === 'asha') {
+                    const ashaData = await loadAshaFromFile(file);
+                    currentFileData = { name: file.name, type: 'asha', data: ashaData, mediaBlobs: {} };
+                    // try to extract media from file if it's a zip? not directly.
+                    // but we keep the ashaData.
+                    setStatus('✅ Loaded .asha project: ' + ashaData.metadata?.projectName || 'untitled', 'success');
+                    // store for download
+                    currentAshaBlob = file;
+                    currentZipBlob = null;
+                } else if (ext === 'zip') {
+                    const result = await zipToAsha(file);
+                    currentFileData = { name: file.name, type: 'zip', data: result.ashaData, mediaBlobs: result.mediaBlobs, fileTree: result.fileTree };
+                    setStatus('📦 Loaded .zip, parsed as .asha project', 'info');
+                    currentAshaBlob = null;
+                    currentZipBlob = file;
+                } else if (ext === 'json') {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    if (data.fileTree) {
+                        currentFileData = { name: file.name, type: 'asha', data: data, mediaBlobs: {} };
+                        setStatus('✅ Loaded .json as .asha project', 'success');
+                        currentAshaBlob = file;
+                        currentZipBlob = null;
+                    } else {
+                        setStatus('⚠️ JSON file does not contain fileTree', 'error');
+                    }
+                } else {
+                    setStatus('⚠️ Unsupported file type: ' + ext, 'error');
+                }
+            } catch (e) {
+                setStatus('❌ Error: ' + e.message, 'error');
+                console.error(e);
+            }
+        }
+
+        // ---------- event binding ----------
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                await handleFile(e.target.files[0]);
+            }
+            e.target.value = ''; // reset
+        });
+
+        // Zip → .asha
+        btnZipToAsha.addEventListener('click', () => {
+            fileInput.click();
+            // we need to handle after file load
+        });
+
+        // Folder → .asha
+        btnFolderToAsha.addEventListener('click', async () => {
+            if (!window.showDirectoryPicker) {
+                setStatus('❌ File System API not supported', 'error');
+                return;
+            }
+            try {
+                const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+                const files = [];
+                async function walk(dir, base='') {
+                    for await (const entry of dir.values()) {
+                        if (entry.kind === 'file') {
+                            const file = await entry.getFile();
+                            files.push({ path: base + entry.name, file });
+                        } else if (entry.kind === 'directory') {
+                            await walk(await dir.getDirectoryHandle(entry.name), base + entry.name + '/');
+                        }
+                    }
+                }
+                await walk(dirHandle);
+                if (files.length === 0) {
+                    setStatus('⚠️ Folder is empty', 'warning');
+                    return;
+                }
+                const result = await folderToAsha(files);
+                currentFileData = { name: 'folder', type: 'folder', data: result.ashaData, mediaBlobs: result.mediaBlobs, fileTree: result.fileTree };
+                setStatus('📁 Folder scanned: ' + files.length + ' files, ready to export as .asha', 'success');
+                // make a .asha blob for download
+                const ashaBlob = new Blob([JSON.stringify(result.ashaData, null, 2)], { type: 'application/json' });
+                currentAshaBlob = ashaBlob;
+                currentZipBlob = null;
+            } catch (e) {
+                if (e.name !== 'AbortError') setStatus('❌ Folder error: ' + e.message, 'error');
+            }
+        });
+
+        // .asha → Zip
+        btnAshaToZip.addEventListener('click', async () => {
+            if (!currentFileData || !currentFileData.data) {
+                setStatus('⚠️ No .asha loaded. Load a .asha or .zip first.', 'warning');
+                return;
+            }
+            try {
+                const ashaData = currentFileData.data;
+                const mediaBlobs = currentFileData.mediaBlobs || {};
+                const zip = await ashaToZip(ashaData, mediaBlobs);
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                currentZipBlob = zipBlob;
+                // download
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = (ashaData.metadata?.projectName || 'project') + '.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setStatus('✅ .asha → .zip downloaded', 'success');
+            } catch (e) {
+                setStatus('❌ Conversion to zip failed: ' + e.message, 'error');
+            }
+        });
+
+        // .asha → Folder
+        btnAshaToFolder.addEventListener('click', async () => {
+            if (!currentFileData || !currentFileData.data) {
+                setStatus('⚠️ No .asha loaded.', 'warning');
+                return;
+            }
+            try {
+                const ashaData = currentFileData.data;
+                const mediaBlobs = currentFileData.mediaBlobs || {};
+                await ashaToFolder(ashaData, mediaBlobs);
+                setStatus('📂 Folder created successfully!', 'success');
+            } catch (e) {
+                if (e.name !== 'AbortError') setStatus('❌ Folder export failed: ' + e.message, 'error');
+            }
+        });
+
+        // download .asha
+        btnDownloadAsha.addEventListener('click', () => {
+            if (!currentFileData || !currentFileData.data) {
+                setStatus('⚠️ No project data to download', 'warning');
+                return;
+            }
+            try {
+                const ashaData = currentFileData.data;
+                const blob = new Blob([JSON.stringify(ashaData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = (ashaData.metadata?.projectName || 'project') + '.asha';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setStatus('⬇️ .asha downloaded', 'success');
+            } catch (e) {
+                setStatus('❌ Download error: ' + e.message, 'error');
+            }
+        });
+
+        // download .zip (if available)
+        btnDownloadZip.addEventListener('click', async () => {
+            if (currentZipBlob) {
+                const url = URL.createObjectURL(currentZipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'converted.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setStatus('⬇️ .zip downloaded (cached)', 'success');
+                return;
+            }
+            // if we have asha data, generate zip on the fly
+            if (currentFileData && currentFileData.data) {
+                try {
+                    const ashaData = currentFileData.data;
+                    const mediaBlobs = currentFileData.mediaBlobs || {};
+                    const zip = await ashaToZip(ashaData, mediaBlobs);
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    currentZipBlob = zipBlob;
+                    const url = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = (ashaData.metadata?.projectName || 'project') + '.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    setStatus('⬇️ .zip downloaded', 'success');
+                } catch (e) {
+                    setStatus('❌ Zip generation failed: ' + e.message, 'error');
+                }
+            } else {
+                setStatus('⚠️ No data to create zip', 'warning');
+            }
+        });
+
+        // drag and drop on card
+        const card = document.querySelector('.card');
+        card.addEventListener('dragover', (e) => { e.preventDefault(); card.style.border = '2px dashed #89b4fa'; });
+        card.addEventListener('dragleave', () => { card.style.border = ''; });
+        card.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            card.style.border = '';
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                await handleFile(file);
+            } else if (e.dataTransfer.items.length > 0 && window.showDirectoryPicker) {
+                // folder drop
+                const items = e.dataTransfer.items;
+                const files = [];
+                for (const item of items) {
+                    if (item.kind === 'file') {
+                        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+                        if (entry && entry.isDirectory) {
+                            // we use directory picker instead
+                            setStatus('📁 Folder drop not fully supported, use "Folder → .asha" button', 'info');
+                            return;
+                        } else if (entry && entry.isFile) {
+                            const file = await new Promise(resolve => entry.file(resolve));
+                            files.push({ path: entry.name, file });
+                        }
+                    }
+                }
+                if (files.length > 0) {
+                    const result = await folderToAsha(files);
+                    currentFileData = { name: 'folder', type: 'folder', data: result.ashaData, mediaBlobs: result.mediaBlobs, fileTree: result.fileTree };
+                    setStatus('📁 Folder drop: ' + files.length + ' files, ready as .asha', 'success');
+                    const ashaBlob = new Blob([JSON.stringify(result.ashaData, null, 2)], { type: 'application/json' });
+                    currentAshaBlob = ashaBlob;
+                    currentZipBlob = null;
+                }
+            }
+        });
+
+        // init
+        setStatus('💡 Ready — load a .asha, .zip, or use folder picker.', 'info');
+
+        // expose for debugging
+        window.__converter = { currentFileData };
+    })();
+</script>
+</body>
+</html>
